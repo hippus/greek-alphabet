@@ -5,6 +5,7 @@
 // cost you your trust in the counters.
 
 import { ITEM_IDS } from './items.js';
+import { FINAL_TEST_SIZE } from './finalTest.js';
 
 export const STORAGE_KEY = 'greek-alphabet-progress';
 export const STATE_VERSION = 1;
@@ -25,7 +26,10 @@ function isValidFinalTest(ft) {
   if (ft === null) return true;
   return (
     typeof ft === 'object' &&
-    Array.isArray(ft.queue) && ft.queue.length === ITEM_IDS.length && isIdList(ft.queue) &&
+    Array.isArray(ft.queue) &&
+    ft.queue.length === Math.min(FINAL_TEST_SIZE, ITEM_IDS.length) &&
+    new Set(ft.queue).size === ft.queue.length &&
+    isIdList(ft.queue) &&
     isCount(ft.index) && ft.index <= ft.queue.length &&
     isIdList(ft.missed)
   );

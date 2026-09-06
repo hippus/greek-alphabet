@@ -8,8 +8,8 @@ Status: approved for planning
 A single static web page, hosted directly from a GitHub repository via GitHub
 Pages, that drills recognition of the 24 Ancient Greek letters in both cases.
 The user presses one large PLAY button, answers ten multiple-choice cards, and
-repeats until every glyph is mastered and a final test over the whole alphabet
-is passed cleanly. Progress survives between visits in browser storage.
+repeats until every glyph is mastered and a final test of fifteen letters drawn
+at random is passed cleanly. Progress survives between visits in browser storage.
 
 All decision logic is pure, dependency-free, and unit tested. Rendering is not
 tested.
@@ -21,6 +21,13 @@ repetition, a final test, local persistence, unit tests.
 
 Out of scope: pronunciation, audio, transliteration drills, name → glyph
 direction, accounts, sync between devices, build tooling.
+
+A dark/light toggle sits in the top-right corner. The preference lives in its
+own storage key, `greek-alphabet-theme`, deliberately apart from the game
+state: resetting progress must not reset the look, and a corrupt theme must
+never invalidate a save. Dark is the default. An inline script in the page head
+applies the stored theme before first paint, so a light-theme visitor never
+sees a dark flash.
 
 ## Item Model
 
@@ -154,23 +161,25 @@ buttons. Tapping an option shows a green ✓ on a correct choice or a red ✗ on
 wrong one, with the correct button highlighted on a miss, for roughly 600 ms,
 then advances. Progress is saved after each card.
 
-**summary** — score for the session (`8 / 10`) and the letters missed, then
-back to idle.
+**summary** — score for the session (`8 / 10`) and the letters missed. Its
+button deals the next round straight away rather than returning to idle, so a
+long study run is one click per round.
 
-**finalTest** — entered automatically once all 48 items are retired. All 48
-items in random order, one pass, same ✓/✗ feedback. A miss sets that item's
-`target = correct + 3` (the item owes 3 more correct answers) and records the id
+**finalTest** — entered automatically once all 48 items are retired. Fifteen
+items sampled at random from the 48, in random order, one pass, same ✓/✗
+feedback. A fresh sample is drawn every time the test is taken. A miss sets
+that item's `target = correct + 3` (the item owes 3 more correct answers) and records the id
 in `missed`. Final-test answers do not use the training penalty table.
 
-**done** — reached only after a 48-card pass with no misses. Shows a completion
+**done** — reached only after a 15-card pass with no misses. Shows a completion
 screen.
 
 ### Transition on a failed final test
 
 If `missed` is non-empty at the end of the pass, the phase returns to
-`training` with only the missed items unretired. When those are paid off, the
-**full 48-item final test runs again** — "done" means a clean sweep of the
-whole alphabet, not merely of the previously missed letters.
+`training` with only the missed items unretired. When those are paid off, a
+**newly sampled 15-item final test runs again** — not a replay of the same
+fifteen, so the retest is not something you can memorise your way through.
 
 ## Module Layout
 
@@ -189,6 +198,7 @@ src/finalTest.js      queue construction, completion test, final-test penalty
 src/game.js           the state machine: initialState, startSession, answerCard,
                       makeCard, summary — phase dispatch lives here
 src/storage.js        serialize / deserialize / validate + localStorage adapter
+src/theme.js          dark/light preference: load, save, toggle
 src/rng.js            seeded mulberry32 for tests, Math.random for the browser
 src/ui.js             rendering and event wiring only
 test/*.test.js        node --test
@@ -220,10 +230,15 @@ Run with `node --test`. Coverage targets the rules that can actually be wrong:
   enough; tops up correctly when it is not.
 - **storage**: round-trips a full state document; rejects a corrupt payload;
   rejects an unknown `version` and falls back to initial state.
-- **finalTest**: queue contains all 48 items exactly once; a miss sets
+- **theme**: dark by default; the toggle flips between exactly two themes; a
+  stored theme is remembered; junk is never written and never loaded; blocked
+  storage degrades to the default rather than throwing; the theme key is
+  distinct from the progress key.
+- **finalTest**: queue holds 15 distinct items drawn from the 48, varying
+  between draws, with every letter reachable across draws; a miss sets
   `target = correct + 3` and records the id; a clean pass reaches `done`; a
   failed pass returns to `training` with only the missed items unretired, and
-  the next test again covers all 48.
+  the next test is a fresh 15-item sample.
 - **phase machine**: the full path training → finalTest → miss → training →
   finalTest → done; a final-test card answered out of order is refused; the
   phase flipping mid-session (the last letter retires while cards are still
@@ -234,4 +249,5 @@ Run with `node --test`. Coverage targets the rules that can actually be wrong:
 None. Decisions taken during design, recorded here so they are not relitigated:
 progress is counted as 10 correct answers per glyph; lowercase and uppercase
 form one mixed pool of 48; distractors are confusable-biased; option labels are
-English/Latin; a missed letter in the final test owes 3 rounds, not 10.
+English/Latin; a missed letter in the final test owes 3 rounds, not 10; the
+final test is 15 letters sampled at random, not all 48.

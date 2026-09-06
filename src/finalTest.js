@@ -1,22 +1,26 @@
-// The final test: one pass over all 48 letters in random order.
+// The final test: 15 letters drawn at random from the alphabet, in random
+// order. A fresh sample is drawn every time the test is taken, so passing it
+// twice does not mean passing the same fifteen twice.
 //
 // A miss here is cheap compared with training — the letter owes three more
-// correct answers, not a fresh ten — but it does cost you the clean sweep, and
-// the whole test runs again once the debt is paid.
+// correct answers, not a fresh ten — but it does cost you the clean pass, and
+// a newly sampled test runs again once the debt is paid.
 
 import { shuffle } from './rng.js';
 
 export const FINAL_TEST_PENALTY = 3;
+export const FINAL_TEST_SIZE = 15;
 
 /** @typedef {{ queue: string[], index: number, missed: string[] }} FinalTest */
 
 /**
  * @param {string[]} itemIds
  * @param {() => number} rng
+ * @param {number} [size]
  * @returns {FinalTest}
  */
-export function buildFinalTest(itemIds, rng) {
-  return { queue: shuffle(itemIds, rng), index: 0, missed: [] };
+export function buildFinalTest(itemIds, rng, size = FINAL_TEST_SIZE) {
+  return { queue: shuffle(itemIds, rng).slice(0, Math.min(size, itemIds.length)), index: 0, missed: [] };
 }
 
 /** @param {FinalTest} finalTest */

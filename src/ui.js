@@ -5,6 +5,7 @@ import { initialState, startSession, answerCard, makeCard, summary } from './gam
 import { load, save } from './storage.js';
 import { browserRng } from './rng.js';
 import { itemById } from './items.js';
+import { loadTheme, saveTheme, nextTheme } from './theme.js';
 
 const FEEDBACK_MS = 700;
 
@@ -21,6 +22,7 @@ let queue = [];
 let position = 0;
 let card = null;
 let tally = { right: 0, total: 0, missed: [] };
+let theme = loadTheme(window.localStorage);
 
 function persist() {
   save(window.localStorage, state);
@@ -36,7 +38,7 @@ function showIdle() {
   el('play').textContent = state.phase === 'finalTest' ? 'Final test' : 'Play';
   el('idle-progress').textContent =
     state.phase === 'finalTest'
-      ? 'Every letter learned — one clean pass to finish.'
+      ? 'Every letter learned — 15 at random to finish.'
       : `${retired} / ${total} letters mastered`;
   el('progress-fill').style.width = `${(retired / total) * 100}%`;
   show('idle');
@@ -100,6 +102,7 @@ function showSummary() {
   el('summary-missed').textContent = tally.missed.length
     ? `Missed: ${tally.missed.map((id) => `${itemById(id).glyph} ${itemById(id).name}`).join(', ')}`
     : 'No mistakes.';
+  el('continue').textContent = state.phase === 'finalTest' ? 'Final test' : 'Next round';
   show('summary');
 }
 
@@ -110,17 +113,30 @@ function play() {
   position = 0;
   tally = { right: 0, total: 0, missed: [] };
   persist();
-  if (queue.length === 0) return showIdle();
+  if (queue.length === 0) return applyTheme();
+showIdle();
   showCard();
 }
 
+function applyTheme() {
+  document.documentElement.dataset.theme = theme;
+}
+
+el('theme').addEventListener('click', () => {
+  theme = nextTheme(theme);
+  saveTheme(window.localStorage, theme);
+  applyTheme();
+});
+
 el('play').addEventListener('click', play);
-el('continue').addEventListener('click', showIdle);
+el('continue').addEventListener('click', play);
 el('reset').addEventListener('click', () => {
   if (!window.confirm('Erase all progress and start the alphabet again?')) return;
   state = initialState();
   persist();
-  showIdle();
+  applyTheme();
+showIdle();
 });
 
+applyTheme();
 showIdle();

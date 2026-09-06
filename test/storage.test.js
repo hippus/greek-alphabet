@@ -34,10 +34,19 @@ test('a mid-final-test document round-trips', () => {
   assert.deepEqual(deserialize(serialize(state)), state);
 });
 
-test('a final test whose queue is not the whole alphabet is rejected', () => {
+test('a final test of the wrong size is rejected', () => {
   const state = initialState();
   state.phase = 'finalTest';
   state.finalTest = { queue: ['alpha-upper', 'beta-lower'], index: 1, missed: ['alpha-upper'] };
+  assert.equal(isValidState(state), false);
+});
+
+test('a final test that repeats a letter is rejected', () => {
+  const state = initialState();
+  state.phase = 'finalTest';
+  const ft = buildFinalTest(ITEM_IDS, mulberry32(5));
+  ft.queue[2] = ft.queue[0];
+  state.finalTest = ft;
   assert.equal(isValidState(state), false);
 });
 

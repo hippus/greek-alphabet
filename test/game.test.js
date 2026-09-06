@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initialState, startSession, answerCard, makeCard, summary } from '../src/game.js';
-import { FINAL_TEST_PENALTY, buildFinalTest, isFinalTestComplete } from '../src/finalTest.js';
+import {
+  FINAL_TEST_PENALTY, FINAL_TEST_SIZE, buildFinalTest, isFinalTestComplete
+} from '../src/finalTest.js';
 import { ITEM_IDS, ALL_NAMES } from '../src/items.js';
 import { isRetired } from '../src/progress.js';
 import { mulberry32 } from '../src/rng.js';
@@ -75,11 +77,13 @@ test('answering does not mutate the state it was given', () => {
   assert.equal(before.items['alpha-upper'].correct, 0);
 });
 
-test('retiring the last letter opens the final test over all 48', () => {
+test('retiring the last letter opens a 15-letter final test', () => {
   const state = trainToFinalTest();
   assert.equal(state.finalTest.index, 0);
   assert.deepEqual(state.finalTest.missed, []);
-  assert.deepEqual(state.finalTest.queue.slice().sort(), ITEM_IDS.slice().sort());
+  assert.equal(state.finalTest.queue.length, FINAL_TEST_SIZE);
+  assert.equal(new Set(state.finalTest.queue).size, FINAL_TEST_SIZE);
+  for (const id of state.finalTest.queue) assert.ok(ITEM_IDS.includes(id));
 });
 
 test('the phase can flip mid-session, and stale training cards are then refused', () => {
@@ -96,21 +100,30 @@ test('the phase can flip mid-session, and stale training cards are then refused'
     'a leftover card from the training session must not be silently counted');
 });
 
-test('the final test queue holds every letter exactly once, in varying order', () => {
+test('the final test is a fresh sample of 15 distinct letters each time', () => {
   const a = buildFinalTest(ITEM_IDS, mulberry32(1));
   const b = buildFinalTest(ITEM_IDS, mulberry32(2));
-  assert.equal(a.queue.length, 48);
-  assert.equal(new Set(a.queue).size, 48);
-  assert.notDeepEqual(a.queue, b.queue);
+  assert.equal(a.queue.length, FINAL_TEST_SIZE);
+  assert.equal(new Set(a.queue).size, FINAL_TEST_SIZE, 'no letter is asked twice');
+  for (const id of a.queue) assert.ok(ITEM_IDS.includes(id));
+  assert.notDeepEqual(a.queue, b.queue, 'a different draw gives a different test');
   assert.equal(isFinalTestComplete(a), false);
-  assert.equal(isFinalTestComplete({ ...a, index: 48 }), true);
+  assert.equal(isFinalTestComplete({ ...a, index: FINAL_TEST_SIZE }), true);
+});
+
+test('the sample covers both cases and is not stuck on one slice of the alphabet', () => {
+  const seen = new Set();
+  for (let seed = 0; seed < 30; seed++) {
+    for (const id of buildFinalTest(ITEM_IDS, mulberry32(seed)).queue) seen.add(id);
+  }
+  assert.equal(seen.size, ITEM_IDS.length, 'every letter is reachable');
 });
 
 test('a clean pass through the final test reaches done', () => {
   let state = trainToFinalTest();
   const { state: started, cardIds } = startSession(state, rng());
   state = started;
-  assert.equal(cardIds.length, 48);
+  assert.equal(cardIds.length, FINAL_TEST_SIZE);
   for (const id of cardIds) state = answerCard(state, id, true, rng());
   assert.equal(state.phase, 'done');
   assert.equal(state.finalTest, null);
@@ -140,7 +153,7 @@ test('a failed final test returns to training with only the missed letters live'
   assert.deepEqual(live.slice().sort(), missed.slice().sort());
 });
 
-test('paying off the missed letters re-runs the whole 48-card test, then done', () => {
+test('paying off the missed letters brings on a freshly sampled test, then done', () => {
   let state = trainToFinalTest();
   const queue = state.finalTest.queue;
   const victim = queue[5];
@@ -151,7 +164,7 @@ test('paying off the missed letters re-runs the whole 48-card test, then done', 
     state = playPerfectSession(state);
   }
   assert.equal(state.phase, 'finalTest');
-  assert.equal(state.finalTest.queue.length, 48, 'the retest covers the whole alphabet');
+  assert.equal(state.finalTest.queue.length, FINAL_TEST_SIZE);
 
   const retest = startSession(state, rng());
   state = retest.state;
