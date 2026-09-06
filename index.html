@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Greek Alphabet Trainer</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>Ω</text></svg>">
+</head>
+<body>
+  <main>
+    <!-- Idle -->
+    <section id="screen-idle" class="screen">
+      <h1>Greek Alphabet</h1>
+      <button id="play" class="play">Play</button>
+      <p id="idle-progress" class="progress-line"></p>
+      <div id="progress-bar" class="bar"><div id="progress-fill" class="bar-fill"></div></div>
+    </section>
+
+    <!-- Card -->
+    <section id="screen-card" class="screen" hidden>
+      <p id="card-counter" class="counter"></p>
+      <div id="glyph" class="glyph"></div>
+      <div id="options" class="options"></div>
+    </section>
+
+    <!-- Summary -->
+    <section id="screen-summary" class="screen" hidden>
+      <p id="summary-score" class="score"></p>
+      <p id="summary-missed" class="missed"></p>
+      <button id="continue" class="play secondary">Continue</button>
+    </section>
+
+    <!-- Done -->
+    <section id="screen-done" class="screen" hidden>
+      <div class="glyph done-glyph">Ω</div>
+      <h1>Done</h1>
+      <p id="done-stats" class="progress-line"></p>
+    </section>
+  </main>
+
+  <footer>
+    <button id="reset" class="link">Reset progress</button>
+  </footer>
+
+  <script type="module" src="src/ui.js"></script>
+</body>
+</html>

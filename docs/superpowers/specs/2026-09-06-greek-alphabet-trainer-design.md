@@ -185,7 +185,9 @@ src/items.js          builds the 48 items from alphabet.js
 src/progress.js       penaltyFor, applyAnswer, isRetired, allRetired
 src/scheduler.js      pickSession and its weighting
 src/options.js        pickOptions (distractor selection)
-src/finalTest.js      queue construction, applyFinalAnswer, phase transitions
+src/finalTest.js      queue construction, completion test, final-test penalty
+src/game.js           the state machine: initialState, startSession, answerCard,
+                      makeCard, summary — phase dispatch lives here
 src/storage.js        serialize / deserialize / validate + localStorage adapter
 src/rng.js            seeded mulberry32 for tests, Math.random for the browser
 src/ui.js             rendering and event wiring only
@@ -223,7 +225,9 @@ Run with `node --test`. Coverage targets the rules that can actually be wrong:
   failed pass returns to `training` with only the missed items unretired, and
   the next test again covers all 48.
 - **phase machine**: the full path training → finalTest → miss → training →
-  finalTest → done.
+  finalTest → done; a final-test card answered out of order is refused; the
+  phase flipping mid-session (the last letter retires while cards are still
+  dealt) ends the round rather than counting the leftovers.
 
 ## Open Questions
 

@@ -1,0 +1,10 @@
+{
+  "name": "greek-alphabet",
+  "version": "1.0.0",
+  "description": "Ancient Greek alphabet recognition trainer",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
