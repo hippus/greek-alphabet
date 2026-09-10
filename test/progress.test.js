@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   INITIAL_TARGET, MAX_TARGET, createProgress, createProgressMap,
-  penaltyFor, debt, isRetired, applyAnswer, allRetired, retiredCount
+  penaltyFor, debt, isRetired, applyAnswer, allRetired, retiredCount, masteryFraction
 } from '../src/progress.js';
 
 test('a fresh item owes ten correct answers', () => {
@@ -69,4 +69,35 @@ test('allRetired and retiredCount read a whole pool', () => {
 
   map.b = { target: 12, correct: 12, errors: 1 };
   assert.equal(allRetired(map), true);
+});
+
+test('mastery is measured in banked answers, so it moves on the first card', () => {
+  const map = createProgressMap(['a', 'b']);
+  assert.equal(masteryFraction(map), 0);
+
+  map.a = applyAnswer(map.a, true);
+  assert.equal(masteryFraction(map), 1 / 20, 'one correct answer out of twenty owed');
+});
+
+test('mastery reaches one exactly when every item has retired', () => {
+  const map = { a: { target: 10, correct: 10, errors: 0 }, b: { target: 12, correct: 12, errors: 1 } };
+  assert.equal(allRetired(map), true);
+  assert.equal(masteryFraction(map), 1);
+});
+
+test('a mistake raises the target, so mastery can slip back', () => {
+  const map = { a: { target: 10, correct: 5, errors: 0 } };
+  const before = masteryFraction(map);
+  map.a = applyAnswer(map.a, false);
+  assert.ok(masteryFraction(map) < before, 'owing more means being less far along');
+});
+
+test('an overshooting count never pushes mastery past one', () => {
+  // The final test can raise a target after the fact; the bar must not overfill.
+  const map = { a: { target: 10, correct: 14, errors: 0 } };
+  assert.equal(masteryFraction(map), 1);
+});
+
+test('an empty pool is zero rather than NaN', () => {
+  assert.equal(masteryFraction({}), 0);
 });

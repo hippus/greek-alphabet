@@ -37,7 +37,12 @@ body {
   color: var(--fg);
   font-family: "Segoe UI", system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  padding: 2rem 0 4.5rem;
 }
+
+/* The 24-row table is taller than a phone screen, so that one screen scrolls
+   from the top instead of being centred. */
+body.scrolling { justify-content: flex-start; }
 
 main {
   width: min(34rem, 92vw);
@@ -75,7 +80,7 @@ h1 {
 
 .progress-line { margin: 0; color: var(--muted); font-size: 0.95rem; }
 
-.bar { width: 100%; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar { width: 100%; height: 9px; background: var(--line); overflow: hidden; }
 .bar-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
 
 .counter { margin: 0; color: var(--muted); font-size: 0.85rem; letter-spacing: 0.1em; }
@@ -114,6 +119,31 @@ h1 {
 .option.right::after { content: " ✓"; }
 .option.wrong::after { content: " ✗"; }
 
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.05rem;
+}
+.table th {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  font-weight: 400;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--line); }
+.table tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover { background: var(--panel); }
+
+/* Same face as the card glyph, so the shapes you drill are the shapes you read. */
+.table .letter {
+  font-family: "Palatino Linotype", Palatino, "Times New Roman", serif;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
 .score { margin: 0; font-size: 2rem; }
 .missed { margin: 0; color: var(--muted); font-size: 0.95rem; min-height: 1.2em; }
 
@@ -137,7 +167,15 @@ h1 {
 
 body { transition: background 0.2s, color 0.2s; }
 
-footer { position: fixed; bottom: 1rem; }
+/* Fixed strip: link row above, mastery bar flush with the bottom edge. */
+footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+}
+.links { display: flex; justify-content: center; gap: 1.5rem; padding: 0.75rem 0; }
 .link {
   border: 0;
   background: none;
@@ -146,6 +184,7 @@ footer { position: fixed; bottom: 1rem; }
   cursor: pointer;
 }
 .link:hover { color: var(--muted); }
+.link[hidden] { display: none; }
 
 @media (max-width: 380px) {
   .options { grid-template-columns: 1fr; }

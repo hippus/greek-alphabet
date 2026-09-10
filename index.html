@@ -24,7 +24,6 @@
       <h1>Greek Alphabet</h1>
       <button id="play" class="play">Play</button>
       <p id="idle-progress" class="progress-line"></p>
-      <div id="progress-bar" class="bar"><div id="progress-fill" class="bar-fill"></div></div>
     </section>
 
     <!-- Card -->
@@ -47,10 +46,29 @@
       <h1>Done</h1>
       <p id="done-stats" class="progress-line"></p>
     </section>
+
+    <!-- Alphabet table -->
+    <section id="screen-table" class="screen" hidden>
+      <h1>Alphabet</h1>
+      <table class="table">
+        <thead>
+          <tr><th scope="col">Capital</th><th scope="col">Small</th><th scope="col">Name</th></tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <button id="table-back" class="play secondary">Back</button>
+    </section>
   </main>
 
   <footer>
-    <button id="reset" class="link">Reset progress</button>
+    <div class="links">
+      <button id="alphabet" class="link">Alphabet</button>
+      <button id="reset" class="link">Reset progress</button>
+    </div>
+    <div id="progress-bar" class="bar" role="progressbar" aria-label="Letters mastered"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div id="progress-fill" class="bar-fill"></div>
+    </div>
   </footer>
 
   <script type="module" src="src/ui.js"></script>

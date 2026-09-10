@@ -67,3 +67,23 @@ export function retiredCount(map) {
 export function allRetired(map) {
   return Object.values(map).every(isRetired);
 }
+
+/**
+ * How far the whole pool has come, as 0..1.
+ *
+ * Counts banked answers against answers owed rather than retired items:
+ * retirement is a step function that stays flat for a hundred cards, which
+ * makes it useless as a "how far am I" signal. A mistake raises the target,
+ * so this can slip backwards — that is the honest reading. Individual counts
+ * are clamped because the final test can raise a target after the fact.
+ * @param {Record<string, Progress>} map
+ */
+export function masteryFraction(map) {
+  let banked = 0;
+  let owed = 0;
+  for (const p of Object.values(map)) {
+    banked += Math.min(p.correct, p.target);
+    owed += p.target;
+  }
+  return owed === 0 ? 0 : banked / owed;
+}

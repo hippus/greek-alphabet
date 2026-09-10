@@ -40,7 +40,7 @@ test('a new game starts in training with 48 untouched letters', () => {
   assert.equal(Object.keys(state.items).length, 48);
   assert.equal(state.finalTest, null);
   assert.deepEqual(state.lastSessionIds, []);
-  assert.deepEqual(summary(state), { retired: 0, total: 48, phase: 'training' });
+  assert.deepEqual(summary(state), { retired: 0, total: 48, fraction: 0, phase: 'training' });
 });
 
 test('starting a session records what was shown, so the next round differs', () => {
@@ -127,7 +127,7 @@ test('a clean pass through the final test reaches done', () => {
   for (const id of cardIds) state = answerCard(state, id, true, rng());
   assert.equal(state.phase, 'done');
   assert.equal(state.finalTest, null);
-  assert.deepEqual(summary(state), { retired: 48, total: 48, phase: 'done' });
+  assert.deepEqual(summary(state), { retired: 48, total: 48, fraction: 1, phase: 'done' });
 });
 
 test('a missed letter in the final test owes three rounds, not ten', () => {

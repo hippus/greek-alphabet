@@ -6,6 +6,7 @@ import { load, save } from './storage.js';
 import { browserRng } from './rng.js';
 import { itemById } from './items.js';
 import { loadTheme, saveTheme, nextTheme } from './theme.js';
+import { LETTERS } from './alphabet.js';
 
 const FEEDBACK_MS = 700;
 
@@ -14,7 +15,8 @@ const screens = {
   idle: el('screen-idle'),
   card: el('screen-card'),
   summary: el('screen-summary'),
-  done: el('screen-done')
+  done: el('screen-done'),
+  table: el('screen-table')
 };
 
 let state = load(window.localStorage) ?? initialState();
@@ -23,6 +25,7 @@ let position = 0;
 let card = null;
 let tally = { right: 0, total: 0, missed: [] };
 let theme = loadTheme(window.localStorage);
+let returnTo = 'idle';
 
 function persist() {
   save(window.localStorage, state);
@@ -30,6 +33,24 @@ function persist() {
 
 function show(name) {
   for (const [key, node] of Object.entries(screens)) node.hidden = key !== name;
+  if (name !== 'table') returnTo = name;
+  // The table is a reference, not a hint: no consulting it with a card up.
+  el('alphabet').hidden = name === 'card';
+  document.body.classList.toggle('scrolling', name === 'table');
+  paintProgress();
+}
+
+// The footer bar tracks the whole alphabet, not the round, so every screen
+// shows it — which is why it is painted here rather than per screen.
+function paintProgress() {
+  const { retired, total, fraction } = summary(state);
+  const percent = Math.round(fraction * 100);
+  // A floor, so the first correct answer of a fresh alphabet still shows.
+  el('progress-fill').style.width =
+    fraction === 0 ? '0' : `max(3px, ${fraction * 100}%)`;
+  const bar = el('progress-bar');
+  bar.setAttribute('aria-valuenow', String(percent));
+  bar.setAttribute('aria-valuetext', `${percent}% — ${retired} of ${total} letters mastered`);
 }
 
 function showIdle() {
@@ -40,8 +61,22 @@ function showIdle() {
     state.phase === 'finalTest'
       ? 'Every letter learned — 15 at random to finish.'
       : `${retired} / ${total} letters mastered`;
-  el('progress-fill').style.width = `${(retired / total) * 100}%`;
   show('idle');
+}
+
+// Built once at startup: 24 static rows that no answer ever changes.
+function buildTable() {
+  const body = el('table-body');
+  for (const { name, upper, lower } of LETTERS) {
+    const row = document.createElement('tr');
+    for (const [text, cls] of [[upper, 'letter'], [lower, 'letter'], [name, 'name']]) {
+      const cell = document.createElement('td');
+      cell.className = cls;
+      cell.textContent = text;
+      row.append(cell);
+    }
+    body.append(row);
+  }
 }
 
 function showDone() {
@@ -113,8 +148,7 @@ function play() {
   position = 0;
   tally = { right: 0, total: 0, missed: [] };
   persist();
-  if (queue.length === 0) return applyTheme();
-showIdle();
+  if (queue.length === 0) return showIdle();
   showCard();
 }
 
@@ -130,13 +164,15 @@ el('theme').addEventListener('click', () => {
 
 el('play').addEventListener('click', play);
 el('continue').addEventListener('click', play);
+el('alphabet').addEventListener('click', () => show('table'));
+el('table-back').addEventListener('click', () => show(returnTo));
 el('reset').addEventListener('click', () => {
   if (!window.confirm('Erase all progress and start the alphabet again?')) return;
   state = initialState();
   persist();
-  applyTheme();
-showIdle();
+  showIdle();
 });
 
 applyTheme();
+buildTable();
 showIdle();

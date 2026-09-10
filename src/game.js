@@ -6,7 +6,9 @@
 // screens inside `training`, handled by the UI.
 
 import { ITEM_IDS, ALL_NAMES, itemById } from './items.js';
-import { createProgressMap, applyAnswer, allRetired, retiredCount } from './progress.js';
+import {
+  createProgressMap, applyAnswer, allRetired, retiredCount, masteryFraction
+} from './progress.js';
 import { pickSession } from './scheduler.js';
 import { pickOptions } from './options.js';
 import {
@@ -123,6 +125,7 @@ export function summary(state) {
   return {
     retired: retiredCount(state.items),
     total: Object.keys(state.items).length,
+    fraction: masteryFraction(state.items),
     phase: state.phase
   };
 }
