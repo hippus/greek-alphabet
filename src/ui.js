@@ -40,8 +40,9 @@ function persist() {
 function show(name) {
   for (const [key, node] of Object.entries(screens)) node.hidden = key !== name;
   if (!OVERLAYS.has(name)) returnTo = name;
-  // Neither overlay is a hint: no consulting them with a card up.
-  for (const id of ['alphabet', 'order']) el(id).hidden = name === 'card';
+  // The way back, and two screens that would be hints: none of them belong
+  // on top of a card.
+  for (const id of ['letters', 'order', 'alphabet']) el(id).hidden = name === 'card';
   document.body.classList.toggle('scrolling', OVERLAYS.has(name));
   paintProgress();
 }
@@ -213,6 +214,7 @@ el('theme').addEventListener('click', () => {
 
 el('play').addEventListener('click', play);
 el('continue').addEventListener('click', play);
+el('letters').addEventListener('click', showIdle);
 el('alphabet').addEventListener('click', () => show('table'));
 el('table-back').addEventListener('click', () => show(returnTo));
 el('order').addEventListener('click', startOrder);
