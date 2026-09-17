@@ -40,8 +40,8 @@ body {
   padding: 2rem 0 4.5rem;
 }
 
-/* The 24-row table is taller than a phone screen, so that one screen scrolls
-   from the top instead of being centred. */
+/* The table and the tile grid are taller than a phone screen, so those
+   screens scroll from the top instead of being centred. */
 body.scrolling { justify-content: flex-start; }
 
 main {
@@ -144,6 +144,47 @@ h1 {
   line-height: 1.2;
 }
 
+/* Ordering drill: 24 tiles, each carrying both cases of one letter. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  padding: 0.75rem 0.2rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  color: var(--fg);
+  font-family: "Palatino Linotype", Palatino, "Times New Roman", serif;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.tile:hover:not(:disabled) { background: var(--panel-hover); }
+
+.tile.placed {
+  background: transparent;
+  border-color: var(--right);
+  color: var(--right);
+  cursor: default;
+}
+
+/* A miss leaves the tile where it is: only the colour answers. */
+.tile.miss { animation: miss 0.4s; }
+@keyframes miss {
+  20%, 60% { border-color: var(--wrong); color: var(--wrong); }
+}
+
+.row { display: flex; gap: 0.75rem; }
+
 .score { margin: 0; font-size: 2rem; }
 .missed { margin: 0; color: var(--muted); font-size: 0.95rem; min-height: 1.2em; }
 
@@ -188,4 +229,5 @@ footer {
 
 @media (max-width: 380px) {
   .options { grid-template-columns: 1fr; }
+  .tiles { grid-template-columns: repeat(3, 1fr); }
 }

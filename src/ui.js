@@ -7,8 +7,12 @@ import { browserRng } from './rng.js';
 import { itemById } from './items.js';
 import { loadTheme, saveTheme, nextTheme } from './theme.js';
 import { LETTERS } from './alphabet.js';
+import { newRun, tap } from './order.js';
 
 const FEEDBACK_MS = 700;
+// Screens reached from the footer rather than from play: they overlay whatever
+// you were doing and hand you back to it.
+const OVERLAYS = new Set(['table', 'order']);
 
 const el = (id) => document.getElementById(id);
 const screens = {
@@ -16,7 +20,8 @@ const screens = {
   card: el('screen-card'),
   summary: el('screen-summary'),
   done: el('screen-done'),
-  table: el('screen-table')
+  table: el('screen-table'),
+  order: el('screen-order')
 };
 
 let state = load(window.localStorage) ?? initialState();
@@ -26,6 +31,7 @@ let card = null;
 let tally = { right: 0, total: 0, missed: [] };
 let theme = loadTheme(window.localStorage);
 let returnTo = 'idle';
+let run = null;
 
 function persist() {
   save(window.localStorage, state);
@@ -33,10 +39,10 @@ function persist() {
 
 function show(name) {
   for (const [key, node] of Object.entries(screens)) node.hidden = key !== name;
-  if (name !== 'table') returnTo = name;
-  // The table is a reference, not a hint: no consulting it with a card up.
-  el('alphabet').hidden = name === 'card';
-  document.body.classList.toggle('scrolling', name === 'table');
+  if (!OVERLAYS.has(name)) returnTo = name;
+  // Neither overlay is a hint: no consulting them with a card up.
+  for (const id of ['alphabet', 'order']) el(id).hidden = name === 'card';
+  document.body.classList.toggle('scrolling', OVERLAYS.has(name));
   paintProgress();
 }
 
@@ -77,6 +83,49 @@ function buildTable() {
     }
     body.append(row);
   }
+}
+
+// The ordering drill. A run lives in memory only: nothing here is scheduled,
+// scored against the alphabet, or written to storage.
+function startOrder() {
+  run = newRun(browserRng);
+  const grid = el('tiles');
+  grid.replaceChildren();
+  for (const { name, upper, lower } of run.tiles) {
+    const tile = document.createElement('button');
+    tile.className = 'tile';
+    tile.type = 'button';
+    tile.append(upper, ' ', lower);
+    tile.setAttribute('aria-label', name);
+    tile.addEventListener('click', () => tapTile(tile, name));
+    grid.append(tile);
+  }
+  paintOrder();
+  show('order');
+}
+
+function tapTile(tile, name) {
+  const step = tap(run, name);
+  run = step.run;
+  if (step.right) {
+    tile.classList.add('placed');
+    tile.disabled = true;
+  } else {
+    // Restarting the animation needs the class gone and a reflow between.
+    tile.classList.remove('miss');
+    void tile.offsetWidth;
+    tile.classList.add('miss');
+  }
+  paintOrder();
+}
+
+function paintOrder() {
+  const { placed, mistakes, tiles } = run;
+  const slips = mistakes === 1 ? '1 mistake' : `${mistakes} mistakes`;
+  el('order-counter').textContent =
+    placed === tiles.length
+      ? `Α → Ω · ${mistakes === 0 ? 'no mistakes' : slips}`
+      : `next: ${placed + 1} / ${tiles.length} · ${slips}`;
 }
 
 function showDone() {
@@ -166,6 +215,9 @@ el('play').addEventListener('click', play);
 el('continue').addEventListener('click', play);
 el('alphabet').addEventListener('click', () => show('table'));
 el('table-back').addEventListener('click', () => show(returnTo));
+el('order').addEventListener('click', startOrder);
+el('order-again').addEventListener('click', startOrder);
+el('order-back').addEventListener('click', () => show(returnTo));
 el('reset').addEventListener('click', () => {
   if (!window.confirm('Erase all progress and start the alphabet again?')) return;
   state = initialState();
